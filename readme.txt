@@ -1,4 +1,4 @@
-=== Hello In All Languages ===
+﻿=== Hello In All Languages ===
 Contributors: StathisG
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=A545FWZ8AB5GL
 Tags: hello in all languages, hello, greeting, hola, hallo, γεια σου, bonjour, marhaba, ola, dobry den
@@ -11,7 +11,7 @@ Hello In All Languages displays a "hello" word translated to the official langua
 == Description ==
 Hello In All Languages displays a "hello" word translated to the official language of the country the visitor's IP belongs to.
 
-[Support & Feedback] (http://forum.stathisg.com/)
+<a href="http://forum.stathisg.com/">Support & Feedback</a>
 
 == Screenshots ==
 
@@ -33,16 +33,16 @@ Hello In All Languages displays a "hello" word translated to the official langua
 
 Enter the shortcode [HELLO-IN-ALL-LANGUAGES] in any post or page and the translated hello will be displayed.
 
-*Notes*
+== Notes ==
 
 * To be sure that all the hello translations will be displayed correctly, please use UTF-8 charset.
 * The plugin may not work properly if you are testing your blog in a local server.
-* To find the IP of the visitor, the geolocation API provided by [IPInfoDB] (http://ipinfodb.com/) is used.
+* To find the IP of the visitor, the geolocation API provided by <a href="http://ipinfodb.com/">IPInfoDB</a> is used.
 
 == Frequently Asked Questions ==
 = How can I get support? =
 
-You can either post your question in the [WordPress Forum] (http://wordpress.org/tags/hello-in-all-languages?forum_id=10) making sure to enter the tag hello-in-all-languages, or in the [Hello In All Languages Forum] (http://forum.stathisg.com/).
+You can either post your question in the <a href="http://wordpress.org/tags/hello-in-all-languages?forum_id=10">WordPress Forum</a> making sure to enter the tag hello-in-all-languages, or in the <a href="http://forum.stathisg.com/">Hello In All Languages Forum</a>.
 
 == Changelog ==
 = 1.0.0 =
