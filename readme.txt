@@ -11,7 +11,7 @@ Hello In All Languages displays a "hello" word translated to the official langua
 == Description ==
 Hello In All Languages displays a "hello" word translated to the official language of the country the visitor's IP belongs to.
 
-<a href="http://forum.stathisg.com/">Support & Feedback</a>
+<a href="http://support.stathisg.com/">Support & Feedback</a>
 
 == Screenshots ==
 
@@ -42,7 +42,7 @@ Enter the shortcode [HELLO-IN-ALL-LANGUAGES] in any post or page and the transla
 == Frequently Asked Questions ==
 = How can I get support? =
 
-You can either post your question in the <a href="http://wordpress.org/tags/hello-in-all-languages?forum_id=10">WordPress Forum</a> making sure to enter the tag hello-in-all-languages, or in the <a href="http://forum.stathisg.com/">Hello In All Languages Forum</a>.
+You can either post your question in the <a href="http://wordpress.org/tags/hello-in-all-languages?forum_id=10">WordPress Forum</a> making sure to enter the tag hello-in-all-languages, or in the <a href="http://support.stathisg.com/">Hello In All Languages Forum</a>.
 
 == Changelog ==
 = 1.0.0 =
