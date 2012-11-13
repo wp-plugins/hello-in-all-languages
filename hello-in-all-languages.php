@@ -2,12 +2,12 @@
 /*
 Plugin Name: Hello In All Languages
 Plugin URI: http://stathisg.com/projects/hello-in-all-languages/
-Version: 1.0.2
-Author: StathisG
-Author URI: http://stathisg.com/
+Version: 1.0.3
+Author: Stathis Goudoulakis
+Author URI: http://burnmind.com/
 Description: Hello In All Languages displays a "hello" word translated to the official language of the country the visitor's IP belongs to.
 
-Copyright 2010 Stathis Goudoulakis (me@stathisg.com)
+Copyright 2010-2012 Stathis Goudoulakis (me@stathisg.com)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@ if (!class_exists("HelloInAllLanguages"))
         private $wpdb;
         private $tableName;
         private $adminOptionsName = "HelloInAllLanguagesAdminOptions";
+        private $defaultAPIkey = "9200a77e841b835118667753c0320d6c1fdf2b0e8541fccf11b0b0c06e6f3edb";
 
         public function __construct()
         {
@@ -41,7 +42,10 @@ if (!class_exists("HelloInAllLanguages"))
 
         private function getAdminOptions()
         {
-            $adminOptions = array('display' => 'default', 'default_country_code' => 'GB', 'how_to_open_url' => 'curl');
+            $adminOptions = array('display' => 'default',
+                                  'default_country_code' => 'UK',
+                                  'how_to_open_url' => 'curl',
+                                  'api_key' => $this->defaultAPIkey);
             $options = get_option($this->adminOptionsName);
             if(!empty($options))
             {
@@ -150,7 +154,7 @@ if (!class_exists("HelloInAllLanguages"))
                           ('FO', 'Faroe Islands', 'Hallo'),
                           ('FR', 'France', 'Bonjour'),
                           ('GA', 'Gabon', 'Bonjour'),
-                          ('GB', 'United Kingdom', 'Hello'),
+                          ('GB', 'Great Britain', 'Hello'),
                           ('GD', 'Grenada', 'Hello'),
                           ('GE', 'Georgia', 'Gamardjobat'),
                           ('GF', 'French Guiana', 'Bonjour'),
@@ -295,6 +299,7 @@ if (!class_exists("HelloInAllLanguages"))
                           ('TZ', 'Tanzania  United Republic of', 'Habari'),
                           ('UA', 'Ukraine', 'Pryvit'),
                           ('UG', 'Uganda', 'Habari'),
+                          ('UK', 'United Kingdom', 'Hello'),
                           ('UM', 'United States Minor Outlying Islands', 'Hello'),
                           ('US', 'United States', 'Hello'),
                           ('UY', 'Uruguay', 'Hola'),
@@ -325,7 +330,7 @@ if (!class_exists("HelloInAllLanguages"))
             $options = $this->getAdminOptions();
 
             $ip = $_SERVER['REMOTE_ADDR'];
-			$url = "http://api.ipinfodb.com/v2/ip_query_country.php?key=9200a77e841b835118667753c0320d6c1fdf2b0e8541fccf11b0b0c06e6f3edb&ip=$ip";
+            $url = "http://api.ipinfodb.com/v3/ip-country/?key={$options['api_key']}&ip=$ip&format=xml";
             $buffer = '';
 
             if($options['how_to_open_url']=='curl')
@@ -343,24 +348,27 @@ if (!class_exists("HelloInAllLanguages"))
             }
             
             try
-			{
-				$xml = new SimpleXMLElement($buffer);
-				$countryCode = $xml -> CountryCode;
-			}
-			catch(Exception $e)
-			{
-				$countryCode = '';
-			}
-            
-            if($countryCode=='')
+            {
+				      $xml = new SimpleXMLElement($buffer);
+				      $countryCode = $xml -> countryCode;
+            }
+            catch(Exception $e)
+            {
+				      $countryCode = '';
+            }
+
+            if(empty($countryCode))
             {
                 $countryCode = $options['default_country_code'];
             }
 
-            $query = "SELECT greeting FROM $this->tableName
-                      WHERE country_code='$countryCode';";
+            $hello = $this->wpdb->get_var($this->wpdb->prepare($this->getGreetingQuery($countryCode)));
 
-            $hello = $this->wpdb->get_var($this->wpdb->prepare($query));
+            //if the country code is unknown, $hello will be empty
+            if(empty($hello))
+            {
+                $hello = $this->wpdb->get_var($this->wpdb->prepare($this->getGreetingQuery($options['default_country_code'])));
+            }
 
             if ($options['display']=='capitalised')
             {
@@ -372,6 +380,11 @@ if (!class_exists("HelloInAllLanguages"))
             }
 
             return $hello;
+        }
+
+        private function getGreetingQuery($countryCode)
+        {
+            return "SELECT greeting FROM $this->tableName WHERE country_code='$countryCode'";
         }
 
         public function printAdminPage()
@@ -395,6 +408,15 @@ if (!class_exists("HelloInAllLanguages"))
                     $options['how_to_open_url'] = $_POST['url'];
                 }
 
+                if (isset($_POST['api-key']) && !empty($_POST['api-key']))
+                {
+                    $options['api_key'] = $_POST['api-key'];
+                }
+                else
+                {
+                    $options['api_key'] = $this->defaultAPIkey;
+                }
+
                 update_option($this->adminOptionsName, $options);
                 ?>
                 <div class="updated">
@@ -406,22 +428,26 @@ if (!class_exists("HelloInAllLanguages"))
             }
             ?>
             <div class=wrap>
+                <div class="icon32" id="icon-options-general"><br/></div>
+                <h2>Hello In All Languages Settings</h2>
                 <form method="post" action="<?php echo $_SERVER["REQUEST_URI"]; ?>">
-                    <h2>Hello In All Languages Settings</h2>
                         <h3>Select how the "hello" word will be displayed:</h3>
                         <p>
-                            <input type="radio" name="display" value="default" <?php if ($options['display'] == "default") { _e('checked="checked"', "HelloInAllLanguages"); }?> />
-                            <label for="display">Default <span class="description">(Example: "Hello")</span></label>
+                            <input type="radio" id="default-hello" name="display" value="default" <?php if ($options['display'] == "default") { _e('checked="checked"', "HelloInAllLanguages"); }?> />
+                            <label for="default-hello">Default <span class="description">(Example: "Hello")</span></label>
                         </p>
                         <p>
-                            <input type="radio" name="display" value="capitalised" <?php if ($options['display'] == "capitalised") { _e('checked="checked"', "HelloInAllLanguages"); }?> />
-                            <label for="display">Capitalised <span class="description">(Example: "HELLO")</span></label>
+                            <input type="radio" id="cap-hello" name="display" value="capitalised" <?php if ($options['display'] == "capitalised") { _e('checked="checked"', "HelloInAllLanguages"); }?> />
+                            <label for="cap-hello">Capitalised <span class="description">(Example: "HELLO")</span></label>
                         </p>
                         <p>
-                            <input type="radio" name="display" value="decapitalised" <?php if ($options['display'] == "decapitalised") { _e('checked="checked"', "HelloInAllLanguages"); }?> />
-                            <label for="display">Decapitalised <span class="description">(Example: "hello")</span></label>
+                            <input type="radio" id="decap-hello" name="display" value="decapitalised" <?php if ($options['display'] == "decapitalised") { _e('checked="checked"', "HelloInAllLanguages"); }?> />
+                            <label for="decap-hello">Decapitalised <span class="description">(Example: "hello")</span></label>
                         </p>
                         <h3>Select default language:</h3>
+                        <p>
+                            <span class="description">Will be used if visitor's IP cannot be determined.</span>
+                        </p>
                         <p>
                             <select name="language">
                                 <?php
@@ -439,17 +465,23 @@ if (!class_exists("HelloInAllLanguages"))
                                 }
                                 ?>
                             </select>
-                            <span class="description">(Will be used if visitor's IP cannot be located)</span>
+                        </p>
+                        <h3>IPInfoDB API Key:</h3>
+                        <p>
+                            <span class="description">Although the plugin will work with its predefined API key, you're advised to use your own API key. <a href="http://ipinfodb.com/register.php" target="_blank">Click here</a> to register for a free IPInfoDB account, to get your personal API key, and paste it to the field below.</span>
+                        </p>
+                        <p>
+                            <input name="api-key" type="text" value="<?php if($this->defaultAPIkey !== $options['api_key']) { echo $options['api_key']; } ?>" class="large-text" placeholder="leave blank to use default API key" />
                         </p>
                         <h3>Way to connect to API:</h3>
+                        <p>
+                            <span class="description">There is no need to change this option, unless you get the "Call to undefined function: curl_init()" error. If you try "allow_url_fopen" and get an error similar to "URL file-access is disabled in the server configuration" please contact your hosting company and ask them to enable either cURL or allow_url_fopen.</span>
+                        </p>
                         <p>
                             <select name="url">
                                 <option value="curl" <?php if ($options['how_to_open_url']=='curl') { echo ' selected'; } ?>>cURL</option>
                                 <option value="fopen" <?php if ($options['how_to_open_url']=='fopen') { echo ' selected'; } ?>>allow_url_fopen</option>
                             </select>
-                        </p>
-                        <p>
-                            <span class="description">There is no need to change this option, unless you get the "Call to undefined function: curl_init()" error. If you try "allow_url_fopen" and get an error similar to "URL file-access is disabled in the server configuration" please contact your hosting company and ask them to enable either cURL or allow_url_fopen.</span>
                         </p>
                         <div class="submit">
                             <input type="submit" name="update_HelloInAllLanguagesSettings" value="<?php _e('Update Settings', 'HelloInAllLanguages') ?>" />
@@ -459,26 +491,26 @@ if (!class_exists("HelloInAllLanguages"))
                 <p>Enter the shortcode <strong>[HELLO-IN-ALL-LANGUAGES]</strong> in any post or page and the translated hello will be displayed.</p>
                 <h2>Notes</h2>
                 <ul>
-                    <li>To be sure that all the hello translations will be displayed correctly, please use <strong>UTF-8</strong> charset.</li>
-                    <li>The plugin may not work properly if you are testing your blog in a local server.</li>
-                    <li>To find the IP of the visitor, the geolocation API provided by <a href="http://ipinfodb.com/" title="IPInfoDB">IPInfoDB</a> is used.</li>
+                    <li>To ensure that all the hello translations will be displayed correctly, please use <strong>UTF-8</strong> charset.</li>
+                    <li>Please be aware that the plugin may not work properly if you are testing your blog in a local server.</li>
+                    <li>To determine the visitor's physical location based on his IP, the free geolocation API provided by <a href="http://ipinfodb.com/" title="IPInfoDB">IPInfoDB</a> is used.</li>
                 </ul>
-                <h2>Support</h2>
-                <p>You can either post your question in the <a href="http://wordpress.org/tags/hello-in-all-languages?forum_id=10" title="WordPress Forum">WordPress Forum</a> making sure to enter the tag hello-in-all-languages, or in the <a href="http://forum.stathisg.com/" title="Hello In All Languages Forum">Hello In All Languages Forum</a>.</p>
-                <h2>Feedback</h2>
-                <p>To report an issue, correct a translation, request features or provide any other kind of feedback please visit the <a href="http://forum.stathisg.com/" title="Hello In All Languages Forum">Hello In All Languages Forum</a>.</p>
-                <h2>Say Thanks</h2>
-                <p>If you like this plugin visit the <a href="http://forum.stathisg.com/" title="Hello In All Languages Forum">Hello In All Languages Forum</a> and say a thanks, or consider donating via paypal, using the following "donate" button.</p>
-                <form action="https://www.paypal.com/cgi-bin/webscr" method="post">
-                    <input type="hidden" name="cmd" value="_s-xclick">
-                    <input type="hidden" name="hosted_button_id" value="A545FWZ8AB5GL">
-                    <input type="image" src="https://www.paypal.com/en_GB/i/btn/btn_donate_SM.gif" border="0" name="submit" alt="PayPal - The safer, easier way to pay online.">
-                    <img alt="" border="0" src="https://www.paypal.com/en_GB/i/scr/pixel.gif" width="1" height="1">
-                </form>
-                <h2>Other Links</h2>
-                <p><a href="http://www.stathisg.com/" title="Author's Homepage">Author's Homepage</a></p>
-                <p><a href="http://www.stathisg.com/projects/hello-in-all-languages/" title="Plugin's Homepage">Plugin's Homepage</a></p>
-                <p><strong>Thank you</strong> for using Hello In All Languages!</p>
+                <h2>Support &amp; feedback</h2>
+                <p>For questions, issues, or feature requests, you can <a href="http://burnmind.com/contact">contact me</a>, or post them either in the <a href="http://wordpress.org/tags/hello-in-all-languages">WordPress Forum</a> (make sure to add the tag "hello-in-all-languages"), or in <a href="http://burnmind.com/freebies/hello-in-all-languages-wordpress-plugin">this</a> blog post.</p>
+                <h2>How to contribute</h2>
+                <ul>
+                    <li>&raquo; Source code on <a href="https://github.com/stathisg/hello-in-all-languages">GitHub</a>.</li>
+                    <li>&raquo; Blog about or link to the plugin so others can learn about it.</li>
+                    <li>&raquo; Report issues, request features, provide feedback, etc.</li>
+                    <li>&raquo; <a href="http://wordpress.org/extend/plugins/hello-in-all-languages/">Rate and/or review</a> the plugin</li>
+                    <li>&raquo; <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=A545FWZ8AB5GL">Make a donation</a></li>
+                </ul>
+                <h2>Other links</h2>
+                <ul>
+                    <li>&raquo; <a href="http://burnmind.com">burnmind.com</a></li>
+                    <li>&raquo; <a href="http://twitter.com/stathisg">@stathisg</a></li>
+                    <li>&raquo; <a href="http://wordpress.org/extend/plugins/how-old-am-i/">How Old Am I</a> WordPress plugin</li>
+                </ul>
             </div>
             <?php
         }
@@ -513,4 +545,13 @@ if (isset($helloClass))
     add_shortcode('HELLO-IN-ALL-LANGUAGES', array( &$helloClass, 'displayHello'));
     add_action('admin_menu', 'HelloInAllLanguages_Admin');
 }
+
+function helloInAllLanguagesSettingsLink($links) { 
+  $settings_link = '<a href="options-general.php?page=hello-in-all-languages.php">Settings</a>'; 
+  array_unshift($links, $settings_link); 
+  return $links; 
+}
+ 
+$plugin = plugin_basename(__FILE__); 
+add_filter("plugin_action_links_$plugin", 'helloInAllLanguagesSettingsLink' );
 ?>
